@@ -1,0 +1,77 @@
+services:
+ 
+  # ── API Gateway ───────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: mfe_gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - shell
+      - mfe-inicio
+      - mfe-portafolio
+      - mfe-siniestros
+    networks:
+      - mfe_network
+ 
+  # ── Shell ─────────────────────────────────────────────
+  shell:
+    image: ${REGISTRY}/mfe-shell:${SHELL_VERSION}
+    container_name: mfe_shell
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:8080
+      - Mfe__Inicio__Url=${MFE_INICIO_URL}
+      - Mfe__Portafolio__Url=${MFE_PORTAFOLIO_URL}
+      - Mfe__Siniestros__Url=${MFE_SINIESTROS_URL}
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      - Jwt__ExpiryMinutes=${JWT_EXPIRY_MINUTES}
+    networks:
+      - mfe_network
+ 
+  # ── MFE Inicio ────────────────────────────────────────
+  mfe-inicio:
+    image: ${REGISTRY}/mfe-inicio:${INICIO_VERSION}
+    container_name: mfe_inicio
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:8081
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+    networks:
+      - mfe_network
+ 
+  # ── MFE Portafolio ────────────────────────────────────
+  mfe-portafolio:
+    image: ${REGISTRY}/mfe-portafolio:${PORTAFOLIO_VERSION}
+    container_name: mfe_portafolio
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:8082
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+    networks:
+      - mfe_network
+ 
+  # ── MFE Siniestros ──────────────────────────────────────
+  mfe-siniestros:
+    image: ${REGISTRY}/mfe-siniestros:${SINIESTROS_VERSION}
+    container_name: mfe_siniestros
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:8083
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+    networks:
+      - mfe_network
+ 
+networks:
+  mfe_network:
+    driver: bridge

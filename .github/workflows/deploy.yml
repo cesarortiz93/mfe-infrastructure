@@ -1,0 +1,40 @@
+# .github/workflows/deploy.yml
+name: Deploy MFEs
+ 
+on:
+  # Se activa cuando cualquier MFE publica nueva imagen
+  repository_dispatch:
+    types:
+      - mfe-shell-updated
+      - mfe-inicio-updated
+      - mfe-portafolio-updated
+      - mfe-siniestros-updated
+ 
+  # También se puede activar manualmente desde GitHub
+  workflow_dispatch:
+    inputs:
+      mfe:
+        description: "Nombre del MFE a actualizar"
+        required: true
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Update MFE version in .env
+        run: |
+          MFE="${{ github.event.client_payload.mfe }}"
+          VERSION="${{ github.event.client_payload.version }}"
+          KEY="${MFE^^}_VERSION"
+          sed -i "s/^${KEY}=.*/${KEY}=${VERSION}/" .env
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .env
+          git commit -m "chore: update ${MFE} to ${VERSION}"
+          git push
+ 
+      - name: Deploy via SSH
+        run: echo "Deploy configurado en Sección 5"
