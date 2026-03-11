@@ -1,4 +1,3 @@
-# .github/workflows/deploy.yml
 name: Deploy MFEs
 
 on:
@@ -41,7 +40,6 @@ jobs:
             MFE="${{ inputs.mfe }}"
             VERSION="${{ inputs.version }}"
           fi
-
           echo "MFE=$MFE" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
@@ -57,18 +55,21 @@ jobs:
             echo "${KEY}=${VERSION}" >> .env
           fi
 
-      - name: Commit changes
+      - name: Commit and push
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.email "actions@github.com"
-          git config user.name "github-actions"
+          git config user.name "GitHub Actions"
           git add .env
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
             git commit -m "chore: update ${{ steps.vars.outputs.MFE }} to ${{ steps.vars.outputs.VERSION }}"
-            git push
+            git remote set-url origin https://${{ github.repository_owner }}:${GH_PAT}@github.com/${{ github.repository }}.git
+            git push origin HEAD
           fi
 
       - name: Deploy via SSH
-        run: echo "Deploy configurado en Sección 5"
+        run: echo "Deploy configurado"
