@@ -16,25 +16,66 @@ on:
       mfe:
         description: "Nombre del MFE a actualizar"
         required: true
+      version:
+        description: "Versión o commit"
+        required: true
+
+permissions:
+  contents: write
  
 jobs:
   deploy:
     runs-on: ubuntu-latest
  
     steps:
-      - uses: actions/checkout@v4
- 
-      - name: Update MFE version in .env
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Resolve variables
+        id: vars
         run: |
-          MFE="${{ github.event.client_payload.mfe }}"
-          VERSION="${{ github.event.client_payload.version }}"
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            MFE="${{ github.event.client_payload.mfe }}"
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            MFE="${{ inputs.mfe }}"
+            VERSION="${{ inputs.version }}"
+          fi
+
+          echo "MFE=$MFE" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+          echo "Deploying MFE: $MFE"
+          echo "Version: $VERSION"
+ 
+      - name: Update .env
+        run: |
+          MFE="${{ steps.vars.outputs.MFE }}"
+          VERSION="${{ steps.vars.outputs.VERSION }}"
           KEY="${MFE^^}_VERSION"
-          sed -i "s/^${KEY}=.*/${KEY}=${VERSION}/" .env
+
+          echo "Updating $KEY=$VERSION"
+
+          if grep -q "^${KEY}=" .env; then
+            sed -i "s/^${KEY}=.*/${KEY}=${VERSION}/" .env
+          else
+            echo "${KEY}=${VERSION}" >> .env
+          fi
+
+      - name: Commit changes
+        run: |
           git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
+          git config user.name "github-actions"
+
           git add .env
-          git commit -m "chore: update ${MFE} to ${VERSION}"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update ${{ steps.vars.outputs.MFE }} to ${{ steps.vars.outputs.VERSION }}"
+            git push
+          fi
+
  
       - name: Deploy via SSH
         run: echo "Deploy configurado en Sección 5"
