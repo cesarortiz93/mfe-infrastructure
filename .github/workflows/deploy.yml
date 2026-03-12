@@ -55,23 +55,6 @@ jobs:
             echo "${KEY}=${VERSION}" >> .env
           fi
       
-      - name: Debug remote URL
-        env:
-          INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
-        run: |
-          echo "Remote actual:"
-          git remote -v
-          
-          echo "Token vacío o no?"
-          if [ -z "${INFRA_DISPATCH_TOKEN}" ]; then
-            echo "ERROR: INFRA_DISPATCH_TOKEN está VACÍO"
-          else
-            echo "OK: Token tiene ${#INFRA_DISPATCH_TOKEN} caracteres"
-          fi
-
-          echo "Repository owner: ${{ github.repository_owner }}"
-          echo "Repository: ${{ github.repository }}"
-
       - name: Commit and push
         env:
           INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
